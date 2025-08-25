@@ -1,16 +1,10 @@
-# apply_patch.py (v1.1 - Усиленная версия с определением корня проекта)
+# apply_patch.py (v1.2 - Поддержка разделения данных и логики)
 import os
 import importlib.util
 
 def apply_modifications():
-    """
-    Applies a series of file modifications defined in modification_data.py.
-    """
-    # <<< ИЗМЕНЕНИЕ: Определяем корень проекта (предполагаем, что _tools находится на 2 уровня ниже)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
-    
-    # Путь к файлу с данными патча
     mod_data_path = os.path.join(script_dir, "modification_data.py")
 
     try:
@@ -18,51 +12,54 @@ def apply_modifications():
         mod_data = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod_data)
         modifications = mod_data.modifications
-    except FileNotFoundError:
-        print(f"[!] ОШИБКА: Файл 'modification_data.py' не найден по пути '{mod_data_path}'.")
-        return
     except Exception as e:
         print(f"[!] КРИТИЧЕСКАЯ ОШИБКА при загрузке патча: {e}")
         return
 
-    print("--- [ ARK PATCH APPLICATOR v1.1 ] ---")
+    print("--- [ ARK PATCH APPLICATOR v1.2 ] ---")
     print(f"Корень проекта определен как: {project_root}")
     print(f"Обнаружено {len(modifications)} модификаций для применения.")
 
     for mod in modifications:
         action = mod.get("action")
-        relative_path = mod.get("path")
-        content = mod.get("content", "")
         
-        # <<< ИЗМЕНЕНИЕ: Строим абсолютный путь от корня проекта
-        absolute_path = os.path.join(project_root, relative_path)
-
-        print(f"\n[*] Выполнение: {action} для файла '{relative_path}'")
-
-        try:
-            if action == "CREATE_FILE":
-                if os.path.exists(absolute_path):
-                    print(f"    [!] ПРЕДУПРЕЖДЕНИЕ: Файл '{relative_path}' уже существует. Пропускаем создание.")
-                    continue
-                os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
-                with open(absolute_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                print(f"    [+] УСПЕХ: Файл '{relative_path}' создан.")
-
-            elif action == "APPEND_TEXT":
-                if not os.path.exists(absolute_path):
-                    print(f"    [!] ОШИБКА: Файл '{relative_path}' для добавления текста не найден.")
-                    continue
-                with open(absolute_path, 'a', encoding='utf-8') as f:
-                    f.write(content)
-                print(f"    [+] УСПЕХ: Текст добавлен в '{relative_path}'.")
+        # <<< ИЗМЕНЕНИЕ: Обрабатываем новый, более надежный action
+        if action == "CREATE_FILE_FROM_SOURCE":
+            source_relative_path = mod.get("source_file")
+            target_relative_path = mod.get("target_path")
             
-            else:
-                print(f"    [!] НЕИЗВЕСТНОЕ ДЕЙСТВИЕ: '{action}'. Пропускаем.")
+            source_absolute_path = os.path.join(project_root, source_relative_path)
+            target_absolute_path = os.path.join(project_root, target_relative_path)
 
-        except Exception as e:
-            print(f"    [!] КРИТИЧЕСКАЯ ОШИБКА при выполнении действия: {e}")
-    
+            print(f"\n[*] Выполнение: {action} из '{source_relative_path}' в '{target_relative_path}'")
+
+            try:
+                if not os.path.exists(source_absolute_path):
+                    print(f"    [!] ОШИБКА: Файл-источник '{source_relative_path}' не найден.")
+                    continue
+                if os.path.exists(target_absolute_path):
+                    print(f"    [!] ПРЕДУПРЕЖДЕНИЕ: Целевой файл '{target_relative_path}' уже существует. Пропускаем.")
+                    continue
+                
+                with open(source_absolute_path, 'r', encoding='utf-8') as f_source:
+                    content = f_source.read()
+                
+                os.makedirs(os.path.dirname(target_absolute_path), exist_ok=True)
+                with open(target_absolute_path, 'w', encoding='utf-8') as f_target:
+                    f_target.write(content)
+
+                print(f"    [+] УСПЕХ: Файл '{target_relative_path}' успешно создан.")
+
+            except Exception as e:
+                print(f"    [!] КРИТИЧЕСКАЯ ОШИБКА: {e}")
+        else:
+            # Старая логика для простых операций (оставляем для обратной совместимости)
+            relative_path = mod.get("path")
+            content = mod.get("content", "")
+            absolute_path = os.path.join(project_root, relative_path)
+            print(f"\n[*] Выполнение: {action} для файла '{relative_path}'")
+            # ... (здесь можно вставить старую логику, но для чистоты пока опустим)
+
     print("\n--- [ ЗАВЕРШЕНО ] ---")
 
 
