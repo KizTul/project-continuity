@@ -1,16 +1,26 @@
-# apply_patch.py (v3.0 - "Атомарный Патч")
+# apply_patch.py (v4.0 - "Постоянный Инструмент")
 import os
 import sys
+import base64
 import subprocess
 import importlib.util
 
-def run_command(command):
-    """Выполняет команду в оболочке и возвращает True в случае успеха."""
+def run_git_command(command, commit_message=""):
+    """Выполняет Git команду, подставляя сообщение коммита."""
+    final_command = command.replace("{commit_message}", commit_message)
     try:
-        subprocess.run(command, check=True, shell=True, encoding='utf-8', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Используем Popen для вывода в реальном времени
+        process = subprocess.Popen(final_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8')
+        for line in process.stdout:
+            print(line, end='')
+        process.wait()
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, final_command)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"[!] ОШИБКА GIT: {e.stderr}")
+    except subprocess.CalledProcessError:
+        return False
+    except Exception as e:
+        print(f"[!] Непредвиденная ошибка GIT: {e}")
         return False
 
 def apply_modifications():
@@ -18,59 +28,61 @@ def apply_modifications():
     project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
     mod_data_path = os.path.join(script_dir, "modification_data.py")
     
-    print("--- [ ARK ATOMIC PATCH APPLICATOR v3.0 ] ---")
-    print(f"Корень проекта: {project_root}")
-
-    # 1. Загрузка патча
+    print("--- [ ARK UNIVERSAL PATCH APPLICATOR v4.0 ] ---")
+    
+    # --- 1. Загрузка патча ---
     try:
         spec = importlib.util.spec_from_file_location("modification_data", mod_data_path)
         mod_data = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod_data)
         modifications = mod_data.modifications
-        commit_message = mod_data.commit_message
+        commit_message = getattr(mod_data, "commit_message", "") # Необязательное поле
     except Exception as e:
         print(f"[!] КРИТИЧЕСКАЯ ОШИБКА: Не удалось загрузить 'modification_data.py'.\n    {e}")
         return
 
-    # 2. Применение изменений к файлам
+    # --- 2. Применение изменений к файлам ---
     os.chdir(project_root)
     for mod in modifications:
         action = mod.get("action")
         path = mod.get("path")
-        content = mod.get("content", "")
-        
         print(f"\n[*] Применяю: {action} для '{path}'")
         try:
-            if action == "CREATE_FILE":
+            content_raw = mod.get("content", "")
+            content_b64 = mod.get("content_b64", None)
+
+            # Определяем финальное содержимое
+            if content_b64:
+                content = base64.b64decode(content_b64).decode('utf-8')
+            else:
+                content = content_raw
+
+            if action == "CREATE_OR_REPLACE_FILE":
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, 'w', encoding='utf-8') as f:
                     f.write(content)
-                print("    [+] УСПЕХ: Файл создан.")
+                print("    [+] УСПЕХ: Файл создан/перезаписан.")
+            
+            elif action == "DELETE_FILE":
+                 if os.path.exists(path):
+                    os.remove(path)
+                    print("    [+] УСПЕХ: Файл удален.")
+                 else:
+                    print("    [!] ПРЕДУПРЕЖДЕНИЕ: Файл для удаления не найден.")
+
         except Exception as e:
             print(f"    [!] ОШИБКА ФАЙЛА: {e}")
-            return # Прерываем выполнение при ошибке
+            return
 
-    # 3. Синхронизация с Git
-    print("\n[*] Начинаю синхронизацию с Git...")
-    if not run_command("git add ."): return
-    print("    [+] git add . - УСПЕХ")
-    
-    if not run_command(f'git commit -m "{commit_message}"'): return
-    print(f'    [+] git commit -m "{commit_message}" - УСПЕХ')
-
-    print("\n[*] Пытаюсь отправить на GitHub...")
-    if not run_command("git push origin main"):
-        print("\n[!] ПРЕДУПРЕЖДЕНИЕ: Не удалось отправить на GitHub. Изменения закоммичены локально.")
-        print("    Попробуйте запустить 'ARK_Sync_System.bat' позже вручную.")
+    # --- 3. Синхронизация с Git (если есть сообщение коммита) ---
+    if commit_message:
+        print("\n--- [ АВТОМАТИЧЕСКАЯ СИНХРОНИЗАЦИЯ ] ---")
+        if not run_git_command("git add ."): return
+        if not run_git_command('git commit -m "{commit_message}"', commit_message): return
+        if not run_git_command("git push origin main"):
+             print("\n[!] ПРЕДУПРЕЖДЕНИЕ: Не удалось отправить на GitHub. Изменения закоммичены локально.")
     else:
-        print("    [+] git push - УСПЕХ")
-
-    # 4. Самоочистка
-    try:
-        os.remove(mod_data_path)
-        print("\n[*] Самоочистка: 'modification_data.py' удален.")
-    except Exception as e:
-        print(f"\n[!] ОШИБКА ОЧИСТКИ: {e}")
+        print("\n[i] Сообщение коммита не указано. Автоматическая синхронизация пропущена.")
 
     print("\n--- [ ЗАВЕРШЕНО ] ---")
 
