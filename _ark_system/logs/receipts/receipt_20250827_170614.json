@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-08-27T17:06:13.771271",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 3,
+  "actions": [
+    {
+      "action": "CREATE_FILE",
+      "path": "ARK_Run_Command.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "_ark_system/_tools/cli.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "requirements.txt",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "ARK_Run_Command.bat",
+      "new_checksum": "5be8ac231df58270c8655cee741982a6a594fdd697b78e72b76fab4e38aa17d5"
+    },
+    {
+      "path": "_ark_system/_tools/cli.py",
+      "new_checksum": "9fdb00e43697e4077962e1c7ad6c8c1946c30bf5908cdc8d41678ead576aebd8"
+    },
+    {
+      "path": "requirements.txt",
+      "new_checksum": "35e8ee836076897db98517ba989c15275c77b1dfa3e4b3cc89a98d2374e4088e"
+    }
+  ],
+  "rollback_errors": []
+}

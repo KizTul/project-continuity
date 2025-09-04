@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-29T03:44:13.262953",
+  "status": "FAIL",
+  "dry_run": false,
+  "operation_count": 1,
+  "actions": [],
+  "updated_files": [],
+  "rollback_errors": []
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "path": "_ark_system/ARK_CODEX.md",
+    "status": "success",
+    "clean_checksum": "e0545d1d5f02d15d43dd56882f7cf2f1ae1a3bced5028754ffa7be6abd573dd6",
+    "final_checksum": "42a1434cdd89a49b9436cf7421923bf22fc4f8130fd3fd9d0ec0bb683d1b1fe2"
+  },
+  {
+    "path": "_ark_system/ARK_MANIFEST.md",
+    "status": "success",
+    "clean_checksum": "d8defebbd6fdb138a94bae7842aeb53461a02bd08bc72bb2793fac398482fb0a",
+    "final_checksum": "838fbad822b0b499a8f79cebefdfb55cf8645af1bec5c1a8b620e089c8e44932"
+  },
+  {
+    "path": "_ark_system/ARK_STRUCTURE.md",
+    "status": "success",
+    "clean_checksum": "2d130ab18320e9832ce34f9ef95afa5f6caaba534cc53c285fda9df7ef2bd7b7",
+    "final_checksum": "33855a16090f0f26f9d5b1b5158918763b0e11c7319f29e077ad9abe2aa3ce14"
+  },
+  {
+    "path": "_ark_system/EXPERIENCE_SCHEMA.md",
+    "status": "success",
+    "clean_checksum": "ac7089be8f5fe224ad9c3fb1e8a575f01a13bec739b0b6c68e5826c92c4dc757",
+    "final_checksum": "b59b77f1687e8d7a05c581c6fe0446a484c70756f0f63f894a19a76df3ac9036"
+  },
+  {
+    "path": "_ark_system/gdd_ark.md",
+    "status": "success",
+    "clean_checksum": "eb12677fb68ce101e60ef62d999bb5e712737680453b926bb167579b0a4cc6d5",
+    "final_checksum": "7645e55d56ec1d4ab8cbd884463e12194c601213f3bc536c7a026f364e6eaedf"
+  },
+  {
+    "path": "_ark_system/roadmap_ark.md",
+    "status": "success",
+    "clean_checksum": "334d9732d60c77041aa03f55828d4a06950fa6a0dddfb984c3267618c9e98210",
+    "final_checksum": "5bb8e3a78fcf5669d5bb85d05c0ac669ddbf3e5b655216af4815077e0cf56069"
+  },
+  {
+    "path": "_ark_system/_core_docs/OPERATING_PROCEDURES.md",
+    "status": "success",
+    "clean_checksum": "a7e98278a37f51573dfcf4db5803efc0846ffe8bdf8da17e13060922a4c41738",
+    "final_checksum": "c4eac981066273afca766e8478b756288ada4f85b554e7ecf4c9fd35312c3166"
+  },
+  {
+    "path": "_ark_system/_core_docs/PROMETHEUS_INIT.md",
+    "status": "success",
+    "clean_checksum": "0e66fb0287a7f7f119ec1d327ab34b8f39af6d96549b07615143eb964b32abb1",
+    "final_checksum": "587237c2c783d8cee9b43a8927449b6483a064460e88332408cf6047a6e081c0"
+  },
+  {
+    "path": "_ark_system/_docs/ARK_Tools_Guide.md",
+    "status": "success",
+    "clean_checksum": "03a5c4e246e966c96dad2b70ec7970cd31ea943bf133b6f912d74054a43759f2",
+    "final_checksum": "102859c2084d54602ea2936e34e64da834a7af965f72b7846490296b43738a1b"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/GoDot/GODOT_EXPERIENCE_CODEX.md",
+    "status": "success",
+    "clean_checksum": "7ef631017ef11ade268a61a36baa58b341ef430af302572957a41ce0a1cfa02e",
+    "final_checksum": "863249f67efe6d7a8940a0ff458c6248164264cae3c03a382ae3048aa3da4d89"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/GoDot/GODOT_KNOWLEDGE_BASE.md",
+    "status": "success",
+    "clean_checksum": "4542283fa39cb19ca4693a295bab766c538f344a539130973062017fc3ced13c",
+    "final_checksum": "931ef3680dc6a6e98758af21f6d2a7f59eaf8ecf352d862efd77ae640ff3c86d"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/META_CONTEXT.md",
+    "status": "success",
+    "clean_checksum": "b935739fba96796d49c845ed3942e4bf1407c00772f4ea10be0c3acaf252f2dd",
+    "final_checksum": "92b12875c64821fc20371c3a3a25c1bb06d337ffa8ed068ecf3ad0e0d0876287"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/PROMETHEUS vFINAL.md",
+    "status": "success",
+    "clean_checksum": "8779312ebf88d8ca72bb85614b5973c7a09603e31aa16978445f2110c8d266b4",
+    "final_checksum": "941d07a86fe6b4d4fdfda24bb61a83409c059b23238f43f30fdcd66921f5ef68"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/PROMETHEUS_KNOWLEDGE_BASE.md",
+    "status": "success",
+    "clean_checksum": "3942adf0748a2a7030cb31a990cc4f291775dd5556ecd4526d588592b8715533",
+    "final_checksum": "b53f2e39b86938692c3d13e02c0151b5303acc71243c39523b307188fae1a075"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/RoboPro_XML_Knowledge_Base_v1.md",
+    "status": "success",
+    "clean_checksum": "0a7d58e68028e5affee041343ddcea54cf58a1aa64a885e22a33c09d0c7e957d",
+    "final_checksum": "b0df0101df7c98a07bd6fb2df459a8ea8efaff9c84481b9ad39cd340eacc45e2"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/sklad_prog_poiz.md",
+    "status": "success",
+    "clean_checksum": "3744d738c259938ff97e891a00155f7f1fd59e4fa25b8cfd2a704e1cdb50c938",
+    "final_checksum": "f4c0cd18c356ca9b9cb303ede10690867aedcb6096cfc0a6b7a84bdde5c7d915"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/\u0411\u0443\u0444\u0435\u0440.md",
+    "status": "success",
+    "clean_checksum": "f0a9874067c95f0ee376b23d960c219ac5f8c89916f92c2950a6e77a33b89444",
+    "final_checksum": "831a695efaa22d4aff7b05b09eb9b682d6596eb2f25e3c338525d9860f72ec65"
+  },
+  {
+    "path": "_ark_system/_knowledge_base/RoboPro/\u0420\u043e\u0431\u043e\u0411\u0430\u0437\u0430.md",
+    "status": "success",
+    "clean_checksum": "28a264b9f969f43e0145d8cbf56eddf1e3998d4f0dfef269972f1c8ad0347a4e",
+    "final_checksum": "2e140c09112fbd01f8971cdd4bd14ed584e4f20a0c2445b9733583485b59c223"
+  }
+]

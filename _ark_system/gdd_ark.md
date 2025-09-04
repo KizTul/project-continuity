@@ -17,3 +17,11 @@
 ## 3. Принципы Ядра
 
 Фундаментальные принципы (`#CP-0`...`#CP-9`) встроены в Исполнителя и задокументированы в `_core_docs/PROMETHEUS_INIT.md`.
+
+---
+
+## 5. Final Verification Check (v7.0)
+
+This section confirms the successful operation of the fully normalized, canonicalized, and post-write-verified checksum system.
+
+<!-- [ARK_INTEGRITY_CHECKSUM::sha256:f81fbd963388bce4c685d0cd28ffe82362a7c48f737304e91def1dd86dbad0e9] -->

@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-08-26T22:32:10.507324",
+  "status": "FAIL",
+  "dry_run": false,
+  "operation_count": 3,
+  "actions": [
+    {
+      "action": "CREATE_FILE",
+      "path": "_ark_system/_staging/rollback_test.txt",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "_ark_system/_staging/rollback_test.txt",
+      "new_checksum": "bdc0cd4761b5930232957a32cf5768cbe1b8cb1fe8996735ebbc0c31ffa9540d"
+    }
+  ],
+  "rollback_errors": []
+}

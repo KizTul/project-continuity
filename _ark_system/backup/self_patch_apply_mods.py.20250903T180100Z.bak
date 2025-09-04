@@ -1,0 +1,83 @@
+# _ark_system/_tools/self_patch_apply_mods.py
+import os, re, shutil
+from datetime import datetime
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+TARGET = os.path.join(ROOT_DIR, '_ark_system', '_tools', 'apply_modifications.py')
+BACKUP_DIR = os.path.join(ROOT_DIR, '_ark_system', 'backup')
+os.makedirs(BACKUP_DIR, exist_ok=True)
+
+INSERT_AFTER_ANCHOR = "self.logger.info(f\"SUCCESS: File '{path}' created.\")"
+REPLACE_ELIF_BLOCK = r"""
+        elif action == 'REPLACE_IN_FILE':
+            from _ark_system._tools.replace_ops import replace_in_file_bytes
+            if original_bytes is None:
+                raise Exception(f\"REPLACE_IN_FILE: target '{path}' does not exist.\")
+            new_bytes, n = replace_in_file_bytes(original_bytes, op.get('content', {}))
+            if n == 0:
+                raise Exception(f\"REPLACE_IN_FILE: pattern not found in '{path}'.\")
+            # NOTE: Data Loss Guard is not included in this patcher for simplicity, it must be added later.
+            if os.path.exists(full_path):
+                backup_path = create_backup_and_rotate(full_path, BACKUP_DIR, max_backups=5)
+                self.undo_log.append({'action': 'RESTORE_FILE', 'original_path': full_path, 'backup_path': backup_path})
+                self.logger.info(f\"BACKUP: Saved '{path}' to {os.path.basename(backup_path)}.\")
+            else:
+                self.undo_log.append({'action': 'DELETE_FILE', 'path': full_path})
+            if not self.dry_run:
+                from tempfile import NamedTemporaryFile
+                with NamedTemporaryFile('wb', delete=False, dir=os.path.dirname(full_path), suffix='.tmp') as tf:
+                    tf.write(new_bytes)
+                    tmp_name = tf.name
+                os.replace(tmp_name, full_path)
+            file_after_bytes = self._read_file_with_retry(full_path, self.logger)
+            verified_clean_checksum = calculate_clean_checksum(file_after_bytes)
+            self.receipt['updated_files'].append({\"path\": path, \"new_checksum\": verified_clean_checksum})
+            self.logger.info(f\"SUCCESS: REPLACE_IN_FILE applied to '{path}'.\")"""
+
+UNKNOWN_ELSE_BLOCK = r"""
+        else:
+            raise Exception(f\"Unknown action '{action}' in operation for '{path}'.\")"""
+
+def read_text(path: str) -> str:
+    with open(path, 'rb') as f:
+        b = f.read()
+    try:
+        return b.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        return b.decode('utf-8', errors='replace')
+
+def write_text(path: str, text: str) -> None:
+    eol = '\r\n' if '\r\n' in text else '\n'
+    with open(path, 'w', encoding='utf-8', newline='') as f:
+        f.write(text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', eol))
+
+def main():
+    if not os.path.exists(TARGET):
+        raise SystemExit(f"Target not found: {TARGET}")
+
+    src = read_text(TARGET)
+    if "elif action == 'REPLACE_IN_FILE':" in src:
+        print("Already patched: REPLACE_IN_FILE present.")
+        return
+
+    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    backup_path = os.path.join(BACKUP_DIR, f"apply_modifications.py.{ts}.patch.bak")
+    shutil.copy2(TARGET, backup_path)
+    print(f"Backup created: {backup_path}")
+
+    if INSERT_AFTER_ANCHOR not in src:
+        raise SystemExit("Anchor not found; file structure unexpected. Aborting for safety.")
+    patched = src.replace(INSERT_AFTER_ANCHOR, INSERT_AFTER_ANCHOR + REPLACE_ELIF_BLOCK)
+
+    if "Unknown action" not in patched:
+        m = re.search(r"\n\s*def _read_file_with_retry\(self, path, logger\):", patched)
+        if not m:
+            raise SystemExit("Retry-method anchor not found. Aborting for safety.")
+        idx = m.start()
+        patched = patched[:idx] + UNKNOWN_ELSE_BLOCK + patched[idx:]
+
+    write_text(TARGET, patched)
+    print("Patched successfully.")
+
+if __name__ == "__main__":
+    main()

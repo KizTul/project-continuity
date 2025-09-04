@@ -1,0 +1,348 @@
+import argparse
+import json
+import os
+import sys
+import logging
+import jsonschema
+from datetime import datetime
+import hashlib
+from tempfile import NamedTemporaryFile
+import time
+import shutil
+from glob import glob
+from typing import Tuple
+
+# --- New Import --- 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from _ark_system._tools.ark_checksum import calculate_clean_checksum, extract_checksum_tag, BOM_BYTES, canonicalize_bytes_for_hash
+
+# --- Constants ---
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+MOD_PACKAGE_PATH = os.path.join(ROOT_DIR, '_ark_system', '_staging', 'modification_package.json')
+LOG_DIR = os.path.join(ROOT_DIR, '_ark_system', 'logs')
+RECEIPT_DIR = os.path.join(LOG_DIR, 'receipts')
+BACKUP_DIR = os.path.join(ROOT_DIR, '_ark_system', 'backup')
+LOCK_FILE_PATH = os.path.join(ROOT_DIR, '_ark_system', '_staging', '.apply.lock')
+
+MODIFICATION_SCHEMA_V1_1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "pattern": "^1\\.1$"},
+        "modifications": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "enum": ["MODIFY_FILE", "CREATE_FILE", "REPLACE_IN_FILE"]},
+                    "path": {"type": "string"},
+                    "content": {"type": ["string", "object"]},
+                    "expected_checksum_before": {"type": ["string", "null"]}
+                },
+                "required": ["action", "path"]
+            }
+        }
+    },
+    "required": ["version", "modifications"]
+}
+
+CHECKSUM_TAG_FORMAT = "<!-- [ARK_INTEGRITY_CHECKSUM::sha256:{}] -->"
+
+# CORRECTED MARKERS: Defined as regular strings (Unicode)
+DEFAULT_MARKERS = [
+    '...',
+    '[...',
+    ']...',
+    'остается без изменений',
+    'без изменений',
+    'no change',
+    'unchanged'
+]
+
+def setup_logging(log_path):
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_path),
+            logging.StreamHandler()
+        ]
+    )
+    return logging.getLogger()
+
+def create_backup_and_rotate(file_path: str, backup_dir: str, max_backups: int = 5) -> str:
+    os.makedirs(backup_dir, exist_ok=True)
+    base_name = os.path.basename(file_path)
+    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    backup_name = f"{base_name}.{ts}.bak"
+    backup_path = os.path.join(backup_dir, backup_name)
+    shutil.copy2(file_path, backup_path)
+    # Ротация
+    pattern = os.path.join(backup_dir, f"{base_name}.*.bak")
+    files = glob(pattern)
+    files.sort(key=lambda p: os.path.getmtime(p))
+    while len(files) > max_backups:
+        to_remove = files.pop(0)
+        try:
+            os.remove(to_remove)
+        except Exception:
+            pass
+    return backup_path
+
+def detect_truncation_or_placeholder(
+    original_bytes: bytes,
+    candidate_bytes: bytes,
+    markers: list = DEFAULT_MARKERS,
+    reduction_threshold: float = 0.5
+) -> Tuple[bool, str]:
+    """
+    Возвращает (should_abort, reason)
+    """
+    orig_canon = canonicalize_bytes_for_hash(original_bytes)
+    cand_canon = canonicalize_bytes_for_hash(candidate_bytes)
+
+    len_orig = len(orig_canon)
+    len_cand = len(cand_canon)
+
+    if len_orig == 0:
+        return False, ""
+
+    if len_cand < len_orig * (1.0 - reduction_threshold):
+        reason = f"SIZE_REDUCTION: original={len_orig}, new={len_cand}, reduction={1 - len_cand/len_orig:.2%}"
+        return True, reason
+
+    # CORRECTED LOGIC: Decode candidate bytes to string for comparison with string markers
+    try:
+        cand_lower_str = cand_canon.decode('utf-8').lower()
+        for marker in markers:
+            if marker.lower() in cand_lower_str:
+                return True, f"PLACEHOLDER_MARKER_FOUND: {marker}"
+    except UnicodeDecodeError:
+        pass
+        
+    return False, ""
+
+class Transaction:
+    def __init__(self, operations, logger, dry_run=False):
+        self.operations = operations
+        self.logger = logger
+        self.dry_run = dry_run
+        self.undo_log = []
+        self.receipt = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "status": "PENDING",
+            "dry_run": self.dry_run,
+            "operation_count": len(self.operations),
+            "actions": [],
+            "updated_files": [],
+            "rollback_errors": []
+        }
+
+    def execute(self):
+        self.logger.info(f"--- [ARK Modification Processor v7.0 - Golden Standard] ---")
+        try:
+            jsonschema.validate(instance={"version": "1.1", "modifications": self.operations}, schema=MODIFICATION_SCHEMA_V1_1)
+            self.logger.info("VALIDATION SUCCESS: Package conforms to schema.")
+        except jsonschema.exceptions.ValidationError as e:
+            self.logger.error(f"VALIDATION FAILED: {e.message}")
+            self.receipt["status"] = "FAIL"
+            return
+
+        for i, op in enumerate(self.operations):
+            try:
+                self.process_operation(i + 1, op)
+            except Exception as e:
+                self.logger.error(f"FATAL ERROR during execution: {e}")
+                self.logger.warning("--- [Initiating ROLLBACK] ---")
+                self.rollback()
+                self.logger.warning("--- [ROLLBACK Complete] ---")
+                self.receipt["status"] = "FAIL"
+                return
+
+        self.receipt["status"] = "SUCCESS"
+
+    def rollback(self):
+        for undo_op in reversed(self.undo_log):
+            try:
+                if undo_op['action'] == 'RESTORE_FILE':
+                    shutil.copy2(undo_op['backup_path'], undo_op['original_path'])
+                    self.logger.info(f"ROLLED BACK: Restored '{undo_op['original_path']}'")
+                elif undo_op['action'] == 'DELETE_FILE':
+                    os.remove(undo_op['path'])
+                    self.logger.info(f"ROLLED BACK: Deleted '{undo_op['path']}'")
+            except Exception as e:
+                self.logger.error(f"ROLLBACK FAILED for {undo_op}: {e}")
+                self.receipt['rollback_errors'].append(str(e))
+
+    def process_operation(self, i, op):
+        action = op.get('action')
+        path = op.get('path')
+        full_path = os.path.join(ROOT_DIR, path)
+        self.logger.info(f"--- Step {i}/{len(self.operations)}: [{action}] on [{path}] ---")
+
+        original_bytes = self._read_file_with_retry(full_path, self.logger)
+        actual_checksum = calculate_clean_checksum(original_bytes)
+        expected_checksum = op.get('expected_checksum_before')
+
+        if expected_checksum is not None and actual_checksum != expected_checksum:
+            raise Exception(f"STATE CONFLICT on '{path}'. Expected '{expected_checksum}', found '{actual_checksum}'.")
+
+        if action == 'MODIFY_FILE':
+            content = op.get('content', '')
+            final_content_bytes = content.encode('utf-8')
+
+            if original_bytes is not None:
+                should_abort, reason = detect_truncation_or_placeholder(original_bytes, final_content_bytes)
+                if should_abort:
+                    raise Exception(f"DATA LOSS GUARD: Aborting transaction. Reason: {reason}")
+
+            if os.path.exists(full_path):
+                backup_path = create_backup_and_rotate(full_path, BACKUP_DIR, max_backups=5)
+                self.undo_log.append({'action': 'RESTORE_FILE', 'original_path': full_path, 'backup_path': backup_path})
+                self.logger.info(f"BACKUP: Saved '{path}' to {os.path.basename(backup_path)}.")
+            else:
+                self.undo_log.append({'action': 'DELETE_FILE', 'path': full_path})
+            
+            final_clean_checksum = calculate_clean_checksum(final_content_bytes)
+            is_verifiable = path.endswith('.md')
+
+            if not self.dry_run:
+                with NamedTemporaryFile('wb', delete=False, dir=os.path.dirname(full_path), suffix='.tmp') as tf:
+                    tf.write(final_content_bytes)
+                    if is_verifiable:
+                        tag = f"\n\n{CHECKSUM_TAG_FORMAT.format(final_clean_checksum)}"
+                        tf.write(tag.encode('utf-8'))
+                    tmp_name = tf.name
+                os.replace(tmp_name, full_path)
+            
+            file_after_bytes = self._read_file_with_retry(full_path, self.logger)
+            verified_clean_checksum = calculate_clean_checksum(file_after_bytes)
+            checksum_from_tag = extract_checksum_tag(file_after_bytes)
+
+            if is_verifiable and final_clean_checksum != verified_clean_checksum:
+                raise Exception("POST-WRITE VERIFICATION FAILED!")
+
+            self.receipt['updated_files'].append({
+                "path": path, 
+                "new_checksum_canonical": str(verified_clean_checksum) if verified_clean_checksum is not None else None,
+                "new_checksum_final_tag": str(checksum_from_tag) if checksum_from_tag is not None else None
+            })
+            
+            if is_verifiable and checksum_from_tag and checksum_from_tag != verified_clean_checksum:
+                self.logger.error(f"HASH MISMATCH DETECTED on '{path}': canonical={verified_clean_checksum}, tag={checksum_from_tag}")
+            self.logger.info(f"SUCCESS: File '{path}' processed and verified.")
+
+        elif action == 'CREATE_FILE':
+            self.undo_log.append({'action': 'DELETE_FILE', 'path': full_path})
+            content = op.get('content', '')
+            final_content_bytes = content.encode('utf-8')
+            final_clean_checksum = calculate_clean_checksum(final_content_bytes)
+            is_verifiable = path.endswith('.md')
+
+            if not self.dry_run:
+                with NamedTemporaryFile('wb', delete=False, dir=os.path.dirname(full_path), suffix='.tmp') as tf:
+                    tf.write(final_content_bytes)
+                    if is_verifiable:
+                        tag = f"\n\n{CHECKSUM_TAG_FORMAT.format(final_clean_checksum)}"
+                        tf.write(tag.encode('utf-8'))
+                    tmp_name = tf.name
+                os.replace(tmp_name, full_path)
+
+            self.receipt['updated_files'].append({"path": path, "new_checksum": final_clean_checksum})
+            self.logger.info(f"SUCCESS: File '{path}' created.")
+        elif action == 'REPLACE_IN_FILE':
+            from _ark_system._tools.replace_ops import replace_in_file_bytes
+            if original_bytes is None:
+                raise Exception(f"REPLACE_IN_FILE: target '{path}' does not exist.")
+            new_bytes, n = replace_in_file_bytes(original_bytes, op.get('content', {}))
+            if n == 0:
+                raise Exception(f"REPLACE_IN_FILE: pattern not found in '{path}'.")
+            
+            # Note: Data Loss Guard should be integrated here in a future step.
+            
+            if os.path.exists(full_path):
+                backup_path = create_backup_and_rotate(full_path, BACKUP_DIR, max_backups=5)
+                self.undo_log.append({'action': 'RESTORE_FILE', 'original_path': full_path, 'backup_path': backup_path})
+                self.logger.info(f"BACKUP: Saved '{path}' to {os.path.basename(backup_path)}.")
+            else:
+                self.undo_log.append({'action': 'DELETE_FILE', 'path': full_path})
+
+            if not self.dry_run:
+                from tempfile import NamedTemporaryFile
+                with NamedTemporaryFile('wb', delete=False, dir=os.path.dirname(full_path), suffix='.tmp') as tf:
+                    tf.write(new_bytes)
+                    tmp_name = tf.name
+                os.replace(tmp_name, full_path)
+
+            file_after_bytes = self._read_file_with_retry(full_path, self.logger)
+            verified_clean_checksum = calculate_clean_checksum(file_after_bytes)
+            self.receipt['updated_files'].append({"path": path, "new_checksum": verified_clean_checksum})
+            self.logger.info(f"SUCCESS: REPLACE_IN_FILE applied to '{path}'.")
+        else:
+            raise Exception(f"Unknown action '{action}' in operation for '{path}'.")
+
+    def _read_file_with_retry(self, path, logger):
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, 'rb') as f:
+                return f.read()
+        except Exception as e:
+            logger.warning(f"Could not read file {path}: {e}")
+            return None
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dry-run', action='store_true')
+    args = parser.parse_args()
+
+    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(RECEIPT_DIR, exist_ok=True)
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+
+    log_ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    log_path = os.path.join(LOG_DIR, f'apply_changes_{log_ts}.log')
+    logger = setup_logging(log_path)
+
+    try:
+        with open(LOCK_FILE_PATH, 'x') as f:
+            f.write(str(os.getpid()))
+        logger.info(f"Lock acquired by PID {os.getpid()}.")
+    except FileExistsError:
+        logger.error("Lock file exists. Another instance may be running.")
+        sys.exit(1)
+
+    transaction = None
+    try:
+        with open(MOD_PACKAGE_PATH, 'r', encoding='utf-8') as f:
+            package_data = json.load(f)
+        
+        transaction = Transaction(package_data.get('modifications', []), logger, args.dry_run)
+        transaction.execute()
+
+    except Exception as e:
+        logger.critical(f"An unhandled exception occurred: {e}")
+        if transaction:
+            transaction.receipt["status"] = "FAIL"
+    finally:
+        if transaction:
+            receipt_ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            receipt_path = os.path.join(RECEIPT_DIR, f'receipt_{receipt_ts}.json')
+            with open(receipt_path, 'w', encoding='utf-8') as f:
+                json.dump(transaction.receipt, f, indent=2)
+            logger.info(f"Receipt saved to {receipt_path}")
+            print("--- [Transaction Complete] ---")
+            print(f"SUCCESS: {len(transaction.receipt['updated_files'])} operations applied." if transaction.receipt['status'] == 'SUCCESS' else "FAILURE: Transaction failed and was rolled back.")
+
+        if os.path.exists(LOCK_FILE_PATH):
+            os.remove(LOCK_FILE_PATH)
+            logger.info("Lock file released.")
+        
+        backup_files = [os.path.join(BACKUP_DIR, f) for f in os.listdir(BACKUP_DIR)]
+        if backup_files:
+            backup_files.sort(key=os.path.getmtime)
+            while len(backup_files) > 20:
+                os.remove(backup_files.pop(0))
+            logger.info("Backup directory cleaned up.")
+
+if __name__ == '__main__':
+    main()

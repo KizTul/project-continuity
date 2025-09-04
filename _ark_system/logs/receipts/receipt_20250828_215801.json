@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-08-28T21:58:01.589065",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 3,
+  "actions": [
+    {
+      "action": "MODIFY_FILE",
+      "path": "ARK_Apply_Changes.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "MODIFY_FILE",
+      "path": "ARK_Run_Command.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "APPEND_TO_JSON_ARRAY",
+      "path": "_ark_system/ARK_EXPERIENCE_CODEX.json",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "ARK_Apply_Changes.bat",
+      "new_checksum": "bb47aa02c8a26c862316d2dca770a2aa5eb195c375df474a90d73adb8a2962ce"
+    },
+    {
+      "path": "ARK_Run_Command.bat",
+      "new_checksum": "759b8d3398e7a419e3dbbd21ba304e52713a931487e2339c5a05a21c7fe57059"
+    },
+    {
+      "path": "_ark_system/ARK_EXPERIENCE_CODEX.json",
+      "new_checksum": "04298ec64e8eda7c5dc2d836f7c6b7fc76a16c7e240120842f7703715336210a"
+    }
+  ],
+  "rollback_errors": []
+}

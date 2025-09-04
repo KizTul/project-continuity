@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-08-27T23:07:07.167609",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 1,
+  "actions": [
+    {
+      "action": "CREATE_FILE",
+      "path": "_ark_system/_core_docs/BOOTSTRAP_INIT.md",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "_ark_system/_core_docs/BOOTSTRAP_INIT.md",
+      "new_checksum": "e21e87b56f4f1b7db82a693a021ff00e15ee252e138f1af8994345fecc0632e4"
+    }
+  ],
+  "rollback_errors": []
+}

@@ -1,0 +1,11 @@
+{
+  "version": "1.1",
+  "modifications": [
+    {
+      "action": "MODIFY_FILE",
+      "path": "projects/Warden/_src/warden_bot.py",
+      "expected_checksum_before": "7d23cf183874589d9ccceac3d6eb6f949b73eeee082de06387d584bea5812aa4",
+      "content": "# -*- coding: utf-8 -*-\n# warden_bot.py - Точка входа (v2.2 - Async Keep-Alive Fix)\n\nimport discord\nimport os\nimport asyncio\nfrom discord.ext import commands\n\n# --- КОНФИГУРАЦИЯ ---\ntry:\n    TOKEN = os.environ['DISCORD_BOT_TOKEN']\nexcept KeyError:\n    print(\"!!! КРИТИЧЕСКАЯ ОШИБКА: Секрет 'DISCORD_BOT_TOKEN' не найден.\")\n    exit()\n\n# --- НОВЫЙ, БЕЗОПАСНЫЙ МЕХАНИЗМ KEEP-ALIVE ---\nasync def keep_alive_async():\n    \"\"\"\n    Простой асинхронный цикл, который поддерживает процесс активным,\n    не конфликтуя с основным циклом событий discord.py.\n    \"\"\"\n    while True:\n        await asyncio.sleep(60)\n\n# --- НАСТРОЙКА БОТА И КОГОВ ---\nintents = discord.Intents.default()\nintents.message_content = True\nintents.reactions = True\nintents.members = True\n\nclass WardenBot(commands.Bot):\n    def __init__(self):\n        # Префикс команд не нужен для on_message, но обязателен для commands.Bot\n        super().__init__(command_prefix='!', intents=intents)\n\n    async def setup_hook(self) -> None:\n        cogs_path = 'projects.Warden._src.cogs'\n        for filename in os.listdir('./projects/Warden/_src/cogs'):\n            if filename.endswith('.py') and not filename.startswith('__'):\n                try:\n                    await self.load_extension(f'{cogs_path}.{filename[:-3]}')\n                    print(f'Загружен ког: {filename}')\n                except Exception as e:\n                    print(f'Ошибка загрузки кога {filename}: {e}')\n        print('------')\n\n    async def on_ready(self):\n        print(f'Бот {self.user} успешно запущен!')\n        print('------')\n\nclient = WardenBot()\n\n# --- ЗАПУСК ВСЕГО ---\nasync def main():\n    async with client:\n        # Запускаем keep-alive как безопасную фоновую задачу asyncio\n        asyncio.create_task(keep_alive_async())\n        # Запускаем бота\n        await client.start(TOKEN)\n\nif __name__ == \"__main__\":\n    try:\n        asyncio.run(main())\n    except Exception as e:\n        print(f\"!!! КРИТИЧЕСКАЯ ОШИБКА при запуске бота: {e}\")\n"
+    }
+  ]
+}

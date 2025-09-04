@@ -1,0 +1,131 @@
+# --- ARK Surgical Patch: process_operation v11.2 ---
+def process_operation(self, i: int, op: Dict[str, Any]) -> None:
+    """Process a single modification operation with content sterilization."""
+    action: str = op.get('action', '')
+    path: str = op.get('path', '')
+    if not action or not path:
+        raise ValueError(f"Operation {i} missing 'action' or 'path'")
+
+    full_path = safe_path(ROOT_DIR, path)
+    self.logger.info(f"--- Step {i}/{len(self.operations)}: [{action}] on [{path}] ---")
+
+    original_bytes = _read_file_with_retry(full_path, self.logger)
+    actual_checksum = calculate_clean_checksum(original_bytes)
+    expected = op.get('expected_checksum_before')
+
+    if expected is not None:
+        if actual_checksum != expected:
+            raise Exception(f"STATE CONFLICT on '{path}'. Expected '{expected}', found '{actual_checksum}'.")
+    elif action == "CREATE_FILE":
+        if original_bytes is not None:
+            raise Exception(f"STATE CONFLICT on '{path}'. Action 'CREATE_FILE' requires the file to be absent, but it exists with checksum '{actual_checksum}'.")
+
+    final_content_bytes: Optional[bytes] = None
+    if action in ('CREATE_FILE', 'MODIFY_FILE'):
+        content_obj = op.get('content')
+        if content_obj is None: raise ValueError(f"'content' is required for '{action}' on '{path}'")
+        content_str = json.dumps(content_obj, ensure_ascii=False, indent=2) if isinstance(content_obj, (dict, list)) else str(content_obj)
+        final_content_bytes = content_str.encode('utf-8')
+
+    elif action == 'APPEND_TO_FILE':
+        content_obj = op.get('content')
+        if content_obj is None: raise ValueError(f"'content' is required for '{action}' on '{path}'")
+        content_str = json.dumps(content_obj, ensure_ascii=False, indent=2) if isinstance(content_obj, (dict, list)) else str(content_obj)
+        final_content_bytes = (original_bytes or b'') + content_str.encode('utf-8')
+
+    elif action == 'APPEND_TO_JSON_ARRAY':
+        base_array = []
+        if original_bytes:
+            text = decode_file_content(original_bytes, self.logger)
+            try:
+                base_array = json.loads(text)
+                if not isinstance(base_array, list): raise ValueError("Target for APPEND_TO_JSON_ARRAY is not a top-level JSON array.")
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in '{path}': {e}")
+        to_append = op.get('content', [])
+        base_array.extend(to_append) if isinstance(to_append, list) else base_array.append(to_append)
+        final_content_bytes = json.dumps(base_array, ensure_ascii=False, indent=2).encode('utf-8')
+
+    elif action == 'REPLACE_IN_FILE':
+        if original_bytes is None: raise FileNotFoundError(f"Cannot replace in non-existent file: {path}")
+        final_content_bytes, count = replace_in_file_logic(original_bytes, op.get('content', {}))
+        if count == 0:
+            self.logger.warning(f"REPLACE_IN_FILE: Pattern not found in '{path}', skipping write.")
+            self.receipt['actions'].append({"action": action, "path": path, "status": "NO_CHANGE", "reason": "pattern not found"})
+            return
+
+    elif action == 'DELETE_FILE':
+        if os.path.exists(full_path):
+            backup_path = create_backup_and_rotate(full_path, BACKUP_DIR)
+            if backup_path: self.undo_log.append({'action': 'RESTORE_FILE', 'original_path': full_path, 'backup_path': backup_path})
+            if not self.dry_run: os.remove(full_path)
+        self.logger.info(f"SUCCESS: File '{path}' deleted.")
+        self.receipt['actions'].append({"action": action, "path": path, "status": "SUCCESS"})
+        return
+
+    elif action == 'CREATE_DIRECTORY':
+        if os.path.exists(full_path) and not os.path.isdir(full_path):
+            raise ValueError(f"Cannot create directory '{path}': path exists and is not a directory")
+        if not os.path.exists(full_path):
+            if not self.dry_run: os.makedirs(full_path, exist_ok=True)
+            self.undo_log.append({'action': 'DELETE_DIR_IF_CREATED', 'path': full_path})
+        self.logger.info(f"SUCCESS: Directory '{path}' ensured.")
+        self.receipt['actions'].append({"action": action, "path": path, "status": "SUCCESS"})
+        return
+    else:
+        raise ValueError(f"Unsupported action '{action}'")
+
+    if action in ('MODIFY_FILE', 'REPLACE_IN_FILE') and original_bytes and final_content_bytes is not None:
+        should_abort, reason = detect_truncation_or_placeholder(original_bytes, final_content_bytes)
+        if should_abort: raise Exception(f"DATA LOSS GUARD: Aborting modification of '{path}'. Reason: {reason}")
+
+    # --- Sterilization and Checksum Calculation ---
+    is_verifiable = any(path.endswith(ext) for ext in SELF_VERIFYING_EXTENSIONS)
+    content_to_write = final_content_bytes or b''
+    
+    # [SURGICAL FIX] Sterilize content before final checksum and write
+    if is_verifiable:
+        try:
+            temp_text = decode_file_content(content_to_write, self.logger)
+            import re
+            sterilized_text = re.sub(r'\\s*<!-- \\[ARK_INTEGRITY_CHECKSUM::sha256:[a-f0-9]{64}\\] -->\\s*', '', temp_text, flags=re.IGNORECASE).strip()
+            content_to_write = sterilized_text.encode('utf-8')
+        except Exception:
+            self.logger.warning(f"Could not sterilize content for '{path}'. Proceeding with raw bytes.")
+
+    final_clean_checksum = calculate_clean_checksum(content_to_write)
+    
+    if calculate_clean_checksum(original_bytes) == final_clean_checksum:
+        self.logger.info(f"NO CHANGE: '{path}' — content identical after operation. Skipping write.")
+        self.receipt['actions'].append({"action": action, "path": path, "status": "NO_CHANGE"})
+        return
+
+    backup_path = create_backup_and_rotate(full_path, BACKUP_DIR)
+    if backup_path:
+        self.undo_log.append({'action': 'RESTORE_FILE', 'original_path': full_path, 'backup_path': backup_path})
+    elif not os.path.exists(full_path):
+        self.undo_log.append({'action': 'DELETE_NEWLY_CREATED_FILE', 'path': full_path})
+
+    if not self.dry_run:
+        ensure_parent_dir(full_path)
+        with NamedTemporaryFile('wb', delete=False, dir=os.path.dirname(full_path), suffix='.tmp') as tf:
+            tf.write(content_to_write)
+            if is_verifiable:
+                tag = f"\\n\\n{CHECKSUM_TAG_FORMAT.format(final_clean_checksum)}"
+                tf.write(tag.encode('utf-8'))
+            tf.flush()
+            os.fsync(tf.fileno())
+            tmp_name = tf.name
+        os.replace(tmp_name, full_path)
+        
+        time.sleep(0.05)
+
+        read_back_bytes = _read_file_with_retry(full_path, self.logger)
+        verified_clean_checksum = calculate_clean_checksum(read_back_bytes)
+        if final_clean_checksum != verified_clean_checksum:
+            raise IOError(f"POST-WRITE VERIFICATION FAILED! Expected checksum {final_clean_checksum}, but found {verified_clean_checksum} on disk.")
+    else:
+        self.logger.info(f"DRY-RUN: Would write file '{path}' with checksum {final_clean_checksum}.")
+
+    self.receipt['actions'].append({"action": action, "path": path, "status": "SUCCESS"})
+    self.receipt['updated_files'].append({"path": path, "new_checksum": final_clean_checksum})

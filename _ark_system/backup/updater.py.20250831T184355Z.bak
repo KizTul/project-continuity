@@ -1,0 +1,78 @@
+import os
+import sys
+import hashlib
+import shutil
+import subprocess
+from datetime import datetime
+from tempfile import NamedTemporaryFile
+
+# --- CONFIGURATION ---
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+TOOLS_DIR = os.path.join(ROOT_DIR, '_ark_system', '_tools')
+STAGING_DIR = os.path.join(ROOT_DIR, '_ark_system', '_staging')
+BACKUP_DIR = os.path.join(ROOT_DIR, '_ark_system', 'backup')
+
+# --- TARGETS ---
+NEW_APPLY_MODS_PATH = os.path.join(STAGING_DIR, 'apply_modifications.new.py')
+TARGET_APPLY_MODS_PATH = os.path.join(TOOLS_DIR, 'apply_modifications.py')
+EXPECTED_NEW_HASH = "6c05d4b744735d53a7bc86e262b332a3b1ac7852770bd7e53912baf0c7ecbe87" # SHA-256 for the new script
+
+def main():
+    """Performs a safe, atomic update of the apply_modifications.py tool."""
+    print("--- [ARK Safe Updater v1.0] ---")
+    
+    try:
+        # 1. Verify the new file exists and its hash matches
+        print(f"1. Verifying '{os.path.basename(NEW_APPLY_MODS_PATH)}'...")
+        if not os.path.exists(NEW_APPLY_MODS_PATH):
+            raise FileNotFoundError("New script file not found in _staging directory.")
+        
+        with open(NEW_APPLY_MODS_PATH, 'rb') as f:
+            new_bytes = f.read()
+        
+        actual_hash = hashlib.sha256(new_bytes).hexdigest()
+        if actual_hash != EXPECTED_NEW_HASH:
+            raise ValueError(f"Hash mismatch! Expected {EXPECTED_NEW_HASH}, but got {actual_hash}.")
+        print("   - Hash verification successful.")
+
+        # 2. Check syntax of the new file
+        print("2. Checking syntax...")
+        subprocess.check_call([sys.executable, "-m", "py_compile", NEW_APPLY_MODS_PATH])
+        print("   - Syntax check successful.")
+
+        # 3. Create a timestamped backup of the current tool
+        print(f"3. Backing up current '{os.path.basename(TARGET_APPLY_MODS_PATH)}'...")
+        if os.path.exists(TARGET_APPLY_MODS_PATH):
+            ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            backup_path = os.path.join(BACKUP_DIR, f"apply_modifications.py.{ts}.updater-bak")
+            shutil.copy2(TARGET_APPLY_MODS_PATH, backup_path)
+            print(f"   - Backup created at: {backup_path}")
+        else:
+            print("   - No existing tool to back up.")
+
+        # 4. Perform atomic replacement
+        print("4. Performing atomic replacement...")
+        with NamedTemporaryFile('wb', delete=False, dir=TOOLS_DIR, suffix='.tmp') as tf:
+            tf.write(new_bytes)
+            tf.flush()
+            os.fsync(tf.fileno())
+            tmp_name = tf.name
+        os.replace(tmp_name, TARGET_APPLY_MODS_PATH)
+        print("   - Replacement successful.")
+
+        # 5. Post-update verification
+        print("5. Running post-update verification...")
+        subprocess.check_call([sys.executable, "-m", "py_compile", TARGET_APPLY_MODS_PATH])
+        print("   - Syntax check on new tool successful.")
+
+        print("\n--- UPDATE COMPLETE ---")
+        print("The 'apply_modifications.py' tool has been successfully updated.")
+
+    except (FileNotFoundError, ValueError, subprocess.CalledProcessError, Exception) as e:
+        print(f"\n--- UPDATE FAILED! ---")
+        print(f"An error occurred: {e}")
+        print("The system has not been modified. Please review the error.")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

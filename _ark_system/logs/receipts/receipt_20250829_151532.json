@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-29T15:15:32.307370",
+  "status": "CRITICAL_FAILURE",
+  "dry_run": false,
+  "operation_count": 1,
+  "actions": [],
+  "updated_files": [],
+  "rollback_errors": []
+}

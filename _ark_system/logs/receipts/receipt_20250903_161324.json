@@ -1,0 +1,73 @@
+{
+  "timestamp": "2025-09-03T16:13:24.074494+00:00",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 9,
+  "actions": [
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/deployment_replit.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/security_roles.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/setup_configuration.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/specs_commands.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "projects/Warden/_docs/deployment/replit.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "projects/Warden/_docs/security/roles.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "projects/Warden/_docs/setup/configuration.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "projects/Warden/_docs/specs/commands.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "REPLACE_IN_FILE",
+      "path": "_ark_system/ARK_MANIFEST.md",
+      "status": "NO_CHANGE",
+      "reason": "pattern not found"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "projects/Warden/_docs/deployment_replit.md",
+      "new_checksum": "57b615cce85cf66c87104b9ce9c421759e4e91edce462e2ef776325d53757e67"
+    },
+    {
+      "path": "projects/Warden/_docs/security_roles.md",
+      "new_checksum": "c61701c7c6cb0b2e9f2714fe1569419754743922d037c5da9fe2df8d59a6c696"
+    },
+    {
+      "path": "projects/Warden/_docs/setup_configuration.md",
+      "new_checksum": "10ac7aaf88bca4d2b27994aa47c982d40d02901d895c626bac098c81751f4e7c"
+    },
+    {
+      "path": "projects/Warden/_docs/specs_commands.md",
+      "new_checksum": "2d9e2566a0898ead5b33716a46c2209ecf1d4e0fa21e97ed938c7d2cf3ac8cca"
+    }
+  ],
+  "rollback_errors": []
+}

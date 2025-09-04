@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-08-31T11:39:15.342534",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 2,
+  "actions": [],
+  "updated_files": [
+    {
+      "path": "_ark_system/_tools/replace_ops.py",
+      "new_checksum": "7364043cbff053e9e0b44c51089d3c6b3f89dfe3a09fd4399188c8b215413cc8"
+    },
+    {
+      "path": "_ark_system/_tools/self_patch_apply_mods.py",
+      "new_checksum": "e25b17db0a43d64181ca2b5231f3b1b777d0f184aa33144422bbfd18c1d9509f"
+    }
+  ],
+  "rollback_errors": []
+}

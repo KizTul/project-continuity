@@ -1,0 +1,160 @@
+{
+  "timestamp": "2025-08-28T19:10:38.943992",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 30,
+  "actions": [
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/_core_docs/BOOTSTRAP_INIT.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "ARK_Load_Full_Context.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "ARK_Get_Checksum.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "decoder.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/_staging/modification_package.json",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_DIRECTORY",
+      "path": "_ark_system/backup/20250826_223210_backup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_DIRECTORY",
+      "path": "_ark_system/backup/20250826_225131_backup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_DIRECTORY",
+      "path": "_ark_system/backup/20250826_230118_backup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_DIRECTORY",
+      "path": "_ark_system/backup/20250826_231040_backup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_DIRECTORY",
+      "path": "_ark_system/backup/20250827_024530_backup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_142003.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_142225.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_142521.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_143022.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_143346.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_144025.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_144228.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_152602.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_152823.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_152948.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_153049.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_154026.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_155815.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_160053.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_160430.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_160718.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_160853.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_161323.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_161700.log",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "DELETE_FILE",
+      "path": "_ark_system/logs/apply_modifications_20250826_162511.log",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [],
+  "rollback_errors": []
+}

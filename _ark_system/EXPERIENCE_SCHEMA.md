@@ -76,3 +76,6 @@
   "reviewed_by": "HUMAN",
   "version": "v1.1"
 }
+```
+
+<!-- [ARK_INTEGRITY_CHECKSUM::sha256:ac7089be8f5fe224ad9c3fb1e8a575f01a13bec739b0b6c68e5826c92c4dc757] -->

@@ -1,0 +1,131 @@
+{
+  "timestamp": "2025-08-30T01:02:13.800677",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 16,
+  "actions": [
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_docs/specs",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_docs/setup",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_docs/deployment",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_docs/security",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_src/cogs",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_DIRECTORY",
+      "path": "projects/Warden/_src/utils",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "MODIFY_FILE",
+      "path": "projects/Warden/_docs/GDD_Warden.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/specs/commands.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/setup/configuration.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/deployment/replit.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_docs/security/roles.md",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "MODIFY_FILE",
+      "path": "projects/Warden/_src/warden_bot.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_src/cogs/moderation.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_src/cogs/stats.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "CREATE_FILE",
+      "path": "projects/Warden/_src/cogs/utils.py",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "MODIFY_FILE",
+      "path": "projects/Warden/_docs/Roadmap_Warden.md",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "projects/Warden/_docs/GDD_Warden.md",
+      "new_checksum": "c59e6a82201651ce1919bc630c1a66587fd00ec818032ab0d505c7a6fb8ce679"
+    },
+    {
+      "path": "projects/Warden/_docs/specs/commands.md",
+      "new_checksum": "2d9e2566a0898ead5b33716a46c2209ecf1d4e0fa21e97ed938c7d2cf3ac8cca"
+    },
+    {
+      "path": "projects/Warden/_docs/setup/configuration.md",
+      "new_checksum": "10ac7aaf88bca4d2b27994aa47c982d40d02901d895c626bac098c81751f4e7c"
+    },
+    {
+      "path": "projects/Warden/_docs/deployment/replit.md",
+      "new_checksum": "57b615cce85cf66c87104b9ce9c421759e4e91edce462e2ef776325d53757e67"
+    },
+    {
+      "path": "projects/Warden/_docs/security/roles.md",
+      "new_checksum": "c61701c7c6cb0b2e9f2714fe1569419754743922d037c5da9fe2df8d59a6c696"
+    },
+    {
+      "path": "projects/Warden/_src/warden_bot.py",
+      "new_checksum": "06bd6b64350edd0a68bbbef370b6f8ca741dbef874f6b1d6b52fe5e4b3774711"
+    },
+    {
+      "path": "projects/Warden/_src/cogs/moderation.py",
+      "new_checksum": "e2623e8fb6116fc48945b41fb32454c78f156c544756647d8ddc3fa3d08cbd81"
+    },
+    {
+      "path": "projects/Warden/_src/cogs/stats.py",
+      "new_checksum": "c5ea4a3bb2ee6825662f48056de6c86f256d738942b7cd9edbf9fcbf0fb0b76f"
+    },
+    {
+      "path": "projects/Warden/_src/cogs/utils.py",
+      "new_checksum": "c94fedfe15e86e63df711c13d5d5d20a7f4e3133d9bc5f8dfc7b0a1a0ac399de"
+    },
+    {
+      "path": "projects/Warden/_docs/Roadmap_Warden.md",
+      "new_checksum": "e2862c1eaf0c557f5d728d319b4cbe74712809778ed0a0583ac59bb86c066382"
+    }
+  ],
+  "rollback_errors": []
+}

@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-08-27T18:23:22.555061",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 1,
+  "actions": [
+    {
+      "action": "CREATE_FILE",
+      "path": "_ark_system/_staging/verification_success.txt",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "_ark_system/_staging/verification_success.txt",
+      "new_checksum": "cdf183a49eb6bcf69448f96e5da8e42a6e3201b09892730a437135f11c2971a3"
+    }
+  ],
+  "rollback_errors": []
+}

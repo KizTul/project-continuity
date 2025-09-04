@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-08-27T18:08:26.404312",
+  "status": "SUCCESS",
+  "dry_run": false,
+  "operation_count": 2,
+  "actions": [
+    {
+      "action": "MODIFY_FILE",
+      "path": "ARK_Apply_Changes.bat",
+      "status": "SUCCESS"
+    },
+    {
+      "action": "MODIFY_FILE",
+      "path": "_ark_system/_tools/apply_modifications.py",
+      "status": "SUCCESS"
+    }
+  ],
+  "updated_files": [
+    {
+      "path": "ARK_Apply_Changes.bat",
+      "new_checksum": "207bf3720ad65206f70d43f97c96c883567ff862a7d4ba32a5a7d62989eabdd9"
+    },
+    {
+      "path": "_ark_system/_tools/apply_modifications.py",
+      "new_checksum": "87227351653829bea1d0f77ecee2eed06d3dbd19fa4fd6d15c9c5deda76de2ee"
+    }
+  ],
+  "rollback_errors": []
+}

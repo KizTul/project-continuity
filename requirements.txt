@@ -1,0 +1,2 @@
+# Requirements for ARK Command Runner
+pyperclip>=1.8.2   # Clipboard copy support (cross-platform)
