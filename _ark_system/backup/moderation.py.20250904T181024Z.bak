@@ -1,0 +1,31 @@
+# moderation.py - Ког для модерации
+
+import discord
+from discord.ext import commands
+
+class ModerationCog(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+
+        if message.content.lower().strip() == 'очистить чат':
+            if message.author.guild_permissions.administrator:
+                try:
+                    target_channel = message.channel
+                    await target_channel.send(f'**Принято!** Начинаю полную очистку канала **#{target_channel.name}**.')
+                    deleted = await target_channel.purge(limit=1000, check=lambda m: not m.pinned)
+                    await target_channel.send(f'**Очистка завершена!** Удалено сообщений: **{len(deleted)}**.', delete_after=20)
+                except discord.Forbidden:
+                    await message.channel.send('**Ошибка!** У меня нет права "Управлять сообщениями" в этом канале.')
+                except Exception as e:
+                    await message.channel.send(f'**Ошибка!** Не удалось выполнить очистку: {e}')
+            else:
+                await message.channel.send('Эта команда доступна только администраторам.', delete_after=10)
+
+async def setup(client):
+    # discord.py 2.0+ требует, чтобы коги были клиентом, а не ботом
+    await client.add_cog(ModerationCog(client))

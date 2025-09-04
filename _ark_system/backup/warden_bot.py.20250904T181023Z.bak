@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+# warden_bot.py - Точка входа (v2.2 - Async Keep-Alive Fix)
+
+import discord
+import os
+import asyncio
+from discord.ext import commands
+
+# --- КОНФИГУРАЦИЯ ---
+try:
+    TOKEN = os.environ['DISCORD_BOT_TOKEN']
+except KeyError:
+    print("!!! КРИТИЧЕСКАЯ ОШИБКА: Секрет 'DISCORD_BOT_TOKEN' не найден.")
+    exit()
+
+# --- НОВЫЙ, БЕЗОПАСНЫЙ МЕХАНИЗМ KEEP-ALIVE ---
+async def keep_alive_async():
+    """
+    Простой асинхронный цикл, который поддерживает процесс активным,
+    не конфликтуя с основным циклом событий discord.py.
+    """
+    while True:
+        await asyncio.sleep(60)
+
+# --- НАСТРОЙКА БОТА И КОГОВ ---
+intents = discord.Intents.default()
+intents.message_content = True
+intents.reactions = True
+intents.members = True
+
+class WardenBot(commands.Bot):
+    def __init__(self):
+        # Префикс команд не нужен для on_message, но обязателен для commands.Bot
+        super().__init__(command_prefix='!', intents=intents)
+
+    async def setup_hook(self) -> None:
+        cogs_path = 'projects.Warden._src.cogs'
+        for filename in os.listdir('./projects/Warden/_src/cogs'):
+            if filename.endswith('.py') and not filename.startswith('__'):
+                try:
+                    await self.load_extension(f'{cogs_path}.{filename[:-3]}')
+                    print(f'Загружен ког: {filename}')
+                except Exception as e:
+                    print(f'Ошибка загрузки кога {filename}: {e}')
+        print('------')
+
+    async def on_ready(self):
+        print(f'Бот {self.user} успешно запущен!')
+        print('------')
+
+client = WardenBot()
+
+# --- ЗАПУСК ВСЕГО ---
+async def main():
+    async with client:
+        # Запускаем keep-alive как безопасную фоновую задачу asyncio
+        asyncio.create_task(keep_alive_async())
+        # Запускаем бота
+        await client.start(TOKEN)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"!!! КРИТИЧЕСКАЯ ОШИБКА при запуске бота: {e}")
+<!-- [ARK_INTEGRITY_CHECKSUM::sha256:28989511518f922c50b9c86991248c6938976d8b6fb076ed2f79f965d9da7f20] -->

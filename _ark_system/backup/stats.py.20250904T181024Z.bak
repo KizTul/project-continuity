@@ -1,0 +1,94 @@
+# stats.py - Ког для сбора статистики
+
+import discord
+from discord.ext import commands, tasks
+import re
+from datetime import datetime
+import pytz
+import os
+
+# --- КОНФИГУРАЦИЯ ---
+try:
+    REPORT_CHANNEL_ID = int(os.environ['REPORT_CHANNEL_ID'])
+    TIMEZONE = pytz.timezone('Europe/Kiev')
+except KeyError as e:
+    print(f"!!! КРИТИЧЕСКАЯ ОШИБКА В КОГЕ STATS: Секрет '{e.args[0]}' не найден.")
+    # Выход не делаем, чтобы не уронить всего бота
+
+daily_stats = {}
+
+def ensure_user_stats(user_id):
+    if user_id not in daily_stats:
+        daily_stats[user_id] = {
+            'messages': 0, 'images': 0, 'files': 0,
+            'youtube_links': 0, 'other_links': 0, 'reactions_given': 0
+        }
+
+class StatsCog(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+        self.generate_daily_report.start()
+
+    def cog_unload(self):
+        self.generate_daily_report.cancel()
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot or message.content.lower().strip() in ['очистить чат', 'гарри, ты тут?']:
+            return
+        
+        user_id = message.author.id
+        ensure_user_stats(user_id)
+        daily_stats[user_id]['messages'] += 1
+        
+        urls = re.findall(r'https?://[^\s]+', message.content)
+        for url in urls:
+            if 'youtube.com' in url or 'youtu.be' in url:
+                daily_stats[user_id]['youtube_links'] += 1
+            else:
+                daily_stats[user_id]['other_links'] += 1
+        
+        if message.attachments:
+            for attachment in message.attachments:
+                if attachment.content_type and 'image' in attachment.content_type:
+                    daily_stats[user_id]['images'] += 1
+                else:
+                    daily_stats[user_id]['files'] += 1
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user.bot:
+            return
+        ensure_user_stats(user.id)
+        daily_stats[user.id]['reactions_given'] += 1
+
+    @tasks.loop(minutes=1)
+    async def generate_daily_report(self):
+        now = datetime.now(TIMEZONE)
+        if now.hour == 22 and now.minute == 0:
+            if not hasattr(self.generate_daily_report, "last_run_date") or self.generate_daily_report.last_run_date != now.date():
+                report_channel = self.client.get_channel(REPORT_CHANNEL_ID)
+                if report_channel:
+                    await self.send_report(report_channel)
+                    self.generate_daily_report.last_run_date = now.date()
+
+    async def send_report(self, channel):
+        global daily_stats
+        embed = discord.Embed(
+            title=f"📊 Суточный отчет {datetime.now(TIMEZONE).strftime('%d.%m.%Y')}",
+            color=discord.Color.blue()
+        )
+        if not daily_stats:
+            embed.description = "За последние сутки на сервере царила медитативная тишина."
+        else:
+            # Логика генерации отчета (сокращена для краткости)
+            embed.description = "Отчет об активности..."
+        await channel.send(embed=embed)
+        daily_stats = {}
+
+    @generate_daily_report.before_loop
+    async def before_daily_report(self):
+        await self.client.wait_until_ready()
+
+async def setup(client):
+    await client.add_cog(StatsCog(client))
