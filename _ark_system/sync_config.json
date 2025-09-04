@@ -1,0 +1,14 @@
+{
+  "central": {
+    "remote": "origin",
+    "branch": "main"
+  },
+  "projects": [
+    {
+      "name": "Warden",
+      "prefix": "projects/Warden",
+      "repo_url": "https://github.com/KizTul/Warden.git",
+      "branch": "main"
+    }
+  ]
+}
